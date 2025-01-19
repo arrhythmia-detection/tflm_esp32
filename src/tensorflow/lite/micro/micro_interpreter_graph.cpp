@@ -23,7 +23,10 @@ limitations under the License.
 #include "tensorflow/lite/micro/micro_log.h"
 #include "tensorflow/lite/micro/micro_profiler.h"
 #include "tensorflow/lite/schema/schema_generated.h"
+
+#ifndef EXCLUDE_OPS_EXECUTION_TIME_LOGGING
 #include <Arduino.h>
+#endif
 
 namespace tflite {
     namespace {
@@ -218,14 +221,16 @@ namespace tflite {
                 OpNameFromRegistration(registration),
                 reinterpret_cast<MicroProfilerInterface *>(context_->profiler));
 #endif
-
+            #ifndef EXCLUDE_OPS_EXECUTION_TIME_LOGGING
             const auto start_time = micros();
+            #endif
 
             TFLITE_DCHECK(registration->invoke);
             TfLiteStatus invoke_status = registration->invoke(context_, node);
-
+            #ifndef EXCLUDE_OPS_EXECUTION_TIME_LOGGING
             const unsigned long end_time = micros();
             const unsigned long op_duration = end_time - start_time;
+            #endif
 
             // Check invoke status
             if (invoke_status != kTfLiteOk) {
@@ -235,20 +240,23 @@ namespace tflite {
                               invoke_status);
                 return kTfLiteError;
             }
-
+            #ifndef EXCLUDE_OPS_EXECUTION_TIME_LOGGING
             // Log the operation's execution time and memory usage
             Serial.printf("Operation %s (number %d) executed in %lu microseconds.\n",
                           OpNameFromRegistration(registration),
                           current_operator_index_,
                           op_duration);
+            #endif
 
             // All TfLiteTensor structs used in the kernel are allocated from temp
             // memory in the allocator. This creates a chain of allocations in the
             // temp section. The call below resets the chain of allocations to
             // prepare for the next call.
             allocator_->ResetTempAllocations();
+            #ifndef EXCLUDE_OPS_EXECUTION_TIME_LOGGING
             Serial.println("Going to sleep for a half Second");
             delay(500);
+            #endif
             if (invoke_status == kTfLiteError) {
                 MicroPrintf("Node %s (number %d) failed to invoke with status %d",
                             OpNameFromRegistration(registration), current_operator_index_,
