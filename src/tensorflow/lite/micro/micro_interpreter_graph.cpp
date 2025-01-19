@@ -234,10 +234,12 @@ namespace tflite {
 
             // Check invoke status
             if (invoke_status != kTfLiteOk) {
+                #ifndef EXCLUDE_OPS_EXECUTION_TIME_LOGGING
                 Serial.printf("Error in operation %s (number %d), status: %d.\n",
                               OpNameFromRegistration(registration),
                               current_operator_index_,
                               invoke_status);
+                #endif
                 return kTfLiteError;
             }
             #ifndef EXCLUDE_OPS_EXECUTION_TIME_LOGGING
